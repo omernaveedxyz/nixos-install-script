@@ -123,7 +123,6 @@ formatPrimary() {
     # Create swapfile
     truncate -s 0 /mnt/swap/swapfile
     chattr +C /mnt/swap/swapfile
-    btrfs property set /mnt/swap/swapfile compression none
     dd if=/dev/zero of=/mnt/swap/swapfile bs=1M count=4096
     chmod 0600 /mnt/swap/swapfile
     mkswap /mnt/swap/swapfile
