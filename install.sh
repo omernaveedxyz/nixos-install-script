@@ -135,12 +135,12 @@ createConfig() {
     sed -i "s~# boot.loader.grub.device = \"/dev/sda\";~boot.loader.grub.device = \"$device\";~" /mnt/etc/nixos/configuration.nix
     sed -i "s~# networking.hostName = \"nixos\";~networking.hostName = \"$hostname\";~" /mnt/etc/nixos/configuration.nix
     sed -i "s~# networking.networkmanager.enable = true;~networking.networkmanager.enable = true;~" /mnt/etc/nixos/configuration.nix
-    sed -i "s~# time.timeZone = \"Europe/Amsterdam\";~time.timeZone = \"America/Chicago\";~" /mnt/etc/nixos/configuration.nix
-    sed -i "/# users.users.jane = {/a users.users.omer = { isNormalUser = true; initialPassword = \"password\"; extraGroups = \[ \"wheel\" \]; packages = with pkgs; \[ neovim git firefox lf \]; };" /mnt/etc/nixos/configuration.nix
-    sed -i "s~# services.openssh.enable = true;~services.openssh.enable = true;~" /mnt/etc/nixos/configuration.nix
-    sed -i "/# system.copySystemConfiguration = true;/a nix.settings.trusted-users = \[ \"@wheel\" \];" /mnt/etc/nixos/configuration.nix
-    sed -i "/nix.settings.trusted-users = \[ \"@wheel\" \];/a security.sudo.wheelNeedsPassword = false;" /mnt/etc/nixos/configuration.nix
-    sed -i "/# programs.gnupg.agent = {/a programs.gnupg.agent = { enable = true; enableSSHSupport = true; }; services.pcscd.enable = true;" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i time.timeZone = \"America/Chicago\";" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i users.users.omer = { isNormalUser = true; initialPassword = \"password\"; extraGroups = \[ \"wheel\" \]; packages = with pkgs; \[ neovim git firefox lf \]; };" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i services.openssh.enable = true;" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i nix.settings.trusted-users = \[ \"@wheel\" \];" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i security.sudo.wheelNeedsPassword = false;" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i programs.gnupg.agent = { enable = true; enableSSHSupport = true; }; services.pcscd.enable = true;" /mnt/etc/nixos/configuration.nix
 }
 
 echo -n "Install? [y/N] "
