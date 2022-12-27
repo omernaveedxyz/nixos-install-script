@@ -142,6 +142,7 @@ createConfig() {
     sed -i "/^}/i nix.settings.trusted-users = \[ \"@wheel\" \];" /mnt/etc/nixos/configuration.nix
     sed -i "/^}/i security.sudo.wheelNeedsPassword = false;" /mnt/etc/nixos/configuration.nix
     sed -i "/^}/i programs.gnupg.agent = { enable = true; enableSSHSupport = true; }; services.pcscd.enable = true;" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i boot.initrd.systemd.enable = true;" /mnt/etc/nixos/configuration.nix
 }
 
 echo -n "Install? [y/N] "
