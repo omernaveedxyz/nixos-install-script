@@ -8,6 +8,7 @@ usage() {
     \r  -l, --enable-luks                 Enable drive encryption using LUKS
     \r  -f, --fido2-device <path>         Path to FIDO2 device for encryption
     \r  -n, --hostname <label>            Set drive label (both luks and decrypted)
+    \r  -g, --hibernate                   Assign additional swap space to enable hibernation
     \r  -h, --help                        Display this help message
     "
     exit 1
@@ -21,13 +22,14 @@ validateHostname() {
     return 0
 }
 
-enableLuks=false fido2Device= hostname=
+enableLuks=false fido2Device= hostname= hibernate=
 eval set --$(getopt --options "l,f:,n:,h" --longoptions "enable-luks,fido2-device:,hostname:,help" -- "$@") || usage ""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -l | --enable-luks) enableLuks=true; shift 1;;
         -f | --fido2-device) fido2Device="$2"; shift 2;;
         -n | --hostname) validateHostname "$2"; hostname="$2"; shift 2;;
+        -g | --hibernate) hibernate=true; shift 1;;
         -h | --help) usage "Help flag provided"; shift 1;;
         --) shift; break;;
         *) usage "Invalid argument provided";;
@@ -121,10 +123,20 @@ formatPrimary() {
     mount "$(lsblk -p --noheadings --raw "$device" | awk 'NR==2 {print $1}')" /mnt/boot
 
     # Create swapfile
-    truncate -s 0 /mnt/swap/swapfile
-    chattr +C /mnt/swap/swapfile
-    dd if=/dev/zero of=/mnt/swap/swapfile bs=1M count=4096
-    chmod 0600 /mnt/swap/swapfile
+    SIZE="4g"
+    if [ "$hibernate" = true ]; then
+        MEMORY="$(grep MemTotal /proc/meminfo | awk '{print $2}')"
+        if [ "$MEMORY" -ge "33554432" ]; then
+            SIZE="64g"
+        elif [ "$MEMORY" -ge "16777216" ]; then
+            SIZE="32g"
+        elif [ "$MEMORY" -ge "8388608" ]; then
+            SIZE="16g"
+        elif [ "$MEMORY" -ge "4194304" ]; then
+            SIZE="8g"
+        fi
+    fi
+    btrfs filesystem mkswapfile -s "$SIZE" /mnt/swap/swapfile
     mkswap /mnt/swap/swapfile
     swapon /mnt/swap/swapfile
 }
@@ -133,6 +145,12 @@ createConfig() {
     nixos-generate-config --root /mnt
     sed -i "/boot.initrd.luks.devices.\"$hostname\".device = */a boot.initrd.luks.devices.\"$hostname\".crypttabExtraOpts = \[ \"fido2-device=auto\" \];" /mnt/etc/nixos/hardware-configuration.nix
     sed -i "s~swapDevices = \[ \];~swapDevices = \[ { device = \"/swap/swapfile\"; } \];~" /mnt/etc/nixos/hardware-configuration.nix
+    if [ "$hibernate" = true ]; then
+        sed -i "/^}/i boot.resumeDevice = \"/dev/disk/by-label/$hostname\";" /mnt/etc/nixos/hardware-configuration.nix
+        sed -i "/^}/i boot.kernelParams = \[ \"mem_sleep_default=deep\" \"resume_offset=$(btrfs inspect-internal map-swapfile -r /mnt/swap/swapfile)\" \];" /mnt/etc/nixos/hardware-configuration.nix
+        sed -i "/^}/i services.logind.lidSwitch = \"suspend-then-hiberate\";" /mnt/etc/nixos/hardware-configuration.nix
+        sed -i "/^}/i systemd.sleep.extraConfig = \"HibernateDelaySec=1h\";" /mnt/etc/nixos/hardware-configuration.nix
+    fi
     sed -i "s~# boot.loader.grub.device = \"/dev/sda\";~boot.loader.grub.device = \"$device\";~" /mnt/etc/nixos/configuration.nix
     sed -i "s~# networking.hostName = \"nixos\";~networking.hostName = \"$hostname\";~" /mnt/etc/nixos/configuration.nix
     sed -i "s~# networking.networkmanager.enable = true;~networking.networkmanager.enable = true;~" /mnt/etc/nixos/configuration.nix
