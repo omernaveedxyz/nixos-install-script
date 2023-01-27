@@ -137,7 +137,6 @@ formatPrimary() {
         fi
     fi
     btrfs filesystem mkswapfile -s "$SIZE" /mnt/swap/swapfile
-    mkswap /mnt/swap/swapfile
     swapon /mnt/swap/swapfile
 }
 
