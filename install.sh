@@ -23,7 +23,7 @@ validateHostname() {
 }
 
 enableLuks=false fido2Device= hostname= hibernate=
-eval set --$(getopt --options "l,f:,n:,h" --longoptions "enable-luks,fido2-device:,hostname:,help" -- "$@") || usage ""
+eval set --$(getopt --options "l,f:,n:,h,g" --longoptions "enable-luks,fido2-device:,hostname:,help,hibernate" -- "$@") || usage ""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -l | --enable-luks) enableLuks=true; shift 1;;
