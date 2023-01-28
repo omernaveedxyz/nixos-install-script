@@ -147,7 +147,7 @@ createConfig() {
     if [ "$hibernate" = true ]; then
         sed -i "/^}/i boot.resumeDevice = \"/dev/disk/by-label/$hostname\";" /mnt/etc/nixos/hardware-configuration.nix
         sed -i "/^}/i boot.kernelParams = \[ \"mem_sleep_default=deep\" \"resume_offset=$(btrfs inspect-internal map-swapfile -r /mnt/swap/swapfile)\" \];" /mnt/etc/nixos/hardware-configuration.nix
-        sed -i "/^}/i services.logind.lidSwitch = \"suspend-then-hiberate\";" /mnt/etc/nixos/hardware-configuration.nix
+        sed -i "/^}/i services.logind.lidSwitch = \"suspend-then-hibernate\";" /mnt/etc/nixos/hardware-configuration.nix
         sed -i "/^}/i systemd.sleep.extraConfig = \"HibernateDelaySec=1h\";" /mnt/etc/nixos/hardware-configuration.nix
     fi
     sed -i "s~# boot.loader.grub.device = \"/dev/sda\";~boot.loader.grub.device = \"$device\";~" /mnt/etc/nixos/configuration.nix
