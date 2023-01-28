@@ -137,6 +137,7 @@ formatPrimary() {
         fi
     fi
     btrfs filesystem mkswapfile -s "$SIZE" /mnt/swap/swapfile
+    mkswap /mnt/swap/swapfile # TODO: workaround for https://github.com/NixOS/nixpkgs/pull/212692
     swapon /mnt/swap/swapfile
 }
 
