@@ -174,10 +174,4 @@ if [ "$confirmation" = "y" ]; then
     if [ "$enableLuks" = true ]; then
 	    echo "Please backup $hostname-recovery.txt. It is your LUKS recovery key."
     fi
-    echo -e "\nForeward Instructions:
-    \r  $ reboot
-    \r  $ gpg --import public.key
-    \r  $ git clone git@git.omernaveed.dev:/srv/git/nixos-config
-    \r  $ colmena apply-local --sudo
-    "
 fi
