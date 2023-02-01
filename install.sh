@@ -120,7 +120,7 @@ formatPrimary() {
     fi
     mount --label "$hostname" /mnt
 
-    # Create Btrfs subvolumes
+    # create btrfs subvolumes
     btrfs subvolume create /mnt/@
     btrfs subvolume create /mnt/@nix
     btrfs subvolume create /mnt/@persistent
@@ -129,7 +129,7 @@ formatPrimary() {
     btrfs subvolume snapshot -r /mnt/@ /mnt/@-blank
     umount /mnt
 
-    # Mount subvolumes
+    # mount subvolumes
     mount -o subvol=@,compress=zstd,noatime --label "$hostname" /mnt
     mkdir -p /mnt/{boot,nix,persistent,swap,snapshots}
     mount -o subvol=@nix,compress=zstd,noatime --label "$hostname" /mnt/nix
@@ -138,7 +138,7 @@ formatPrimary() {
     mount -o subvol=@snapshots,compress=zstd,noatime --label "$hostname" /mnt/snapshots
     mount --label "BOOT" /mnt/boot
 
-    # Create swapfile
+    # create swapfile based on size of system memory
     SIZE="4g"
     if [ "$enableHibernation" = true ]; then
         MEMORY="$(grep MemTotal /proc/meminfo | awk '{print $2}')"
