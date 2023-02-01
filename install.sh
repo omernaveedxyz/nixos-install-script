@@ -149,7 +149,7 @@ createConfig() {
         sed -i "/^}/i boot.resumeDevice = \"/dev/disk/by-label/$hostname\";" /mnt/etc/nixos/hardware-configuration.nix
         sed -i "/^}/i boot.kernelParams = \[ \"mem_sleep_default=deep\" \"resume_offset=$(btrfs inspect-internal map-swapfile -r /mnt/swap/swapfile)\" \];" /mnt/etc/nixos/hardware-configuration.nix
         sed -i "/^}/i services.logind.lidSwitch = \"suspend-then-hibernate\";" /mnt/etc/nixos/hardware-configuration.nix
-        sed -i "/^}/i systemd.sleep.extraConfig = \"HibernateDelaySec=1h\";" /mnt/etc/nixos/hardware-configuration.nix
+        sed -i "/^}/i systemd.sleep.extraConfig = \"HibernateDelaySec=1h\";" /mnt/etc/nixos/hardware-configuration.nix # TODO: currently broken as a result of https://github.com/systemd/systemd/issues/25269
         sed -i "s~options = \[ \"subvol=@\" \];~options = \[ \"subvol=@\" \"x-systemd.after=local-fs-pre.target\" \];~" /mnt/etc/nixos/hardware-configuration.nix # TODO: workaround for https://github.com/NixOS/nixpkgs/issues/213122
     fi
     sed -i "s~# boot.loader.grub.device = \"/dev/sda\";~boot.loader.grub.device = \"$device\";~" /mnt/etc/nixos/configuration.nix
