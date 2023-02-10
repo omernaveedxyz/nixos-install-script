@@ -115,6 +115,9 @@ in
 
     # installation
     machine.start()
+
+    machine.fail("echo y | ${install-script}/bin/install.sh --hostname=luks --enable-luks= /dev/vda")
+
     machine.succeed(
       "echo y | ${install-script}/bin/install.sh --hostname=luks --enable-luks=supersecretpassword /dev/vda",
       "nix-store --load-db < ${pkgs.closureInfo { rootPaths = [ installedSystem ]; }}/registration",

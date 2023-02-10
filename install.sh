@@ -33,6 +33,14 @@ validateHostname() {
     return 0
 }
 
+
+# check if specified password matches all requirements for luks password
+# INPUT: $1 -> specified password
+validatePassword() {
+    [ "$(echo "$1")" = "--" ] && usage "password cannot be empty"
+    return 0
+}
+
 enableFIDO2=false fido2Device=
 enableHibernation=false
 enableLuks=false passphrase=
@@ -40,7 +48,7 @@ hostname=
 eval set --$(getopt --options "" --longoptions "enable-luks::,enable-fido2::,hostname::,enable-hibernation,help" -- "$@") || usage ""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --enable-luks) enableLuks=true; passphrase="$2"; shift 2;;
+        --enable-luks) validatePassword "$2"; enableLuks=true; passphrase="$2"; shift 2;;
         --enable-hibernation) enableHibernation=true; shift 1;;
         --enable-fido2) validateFIDO2Device "$2"; enableFIDO2=true; fido2Device="$2"; shift 2;;
         --hostname) validateHostname "$2"; hostname="$2"; shift 2;;
