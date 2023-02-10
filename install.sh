@@ -5,10 +5,10 @@ usage() {
     echo $(basename "$0"): ERROR: "$@"
     echo -e "\nUsage: $(basename "$0") [OPTIONS] <drive>
     \nOptions:
-    \r  --enable-luks                 Enable drive encryption using LUKS
-    \r  --fido2-device <path>         Path to FIDO2 device for encryption (e.g. /dev/hidraw0)
-    \r  --hostname <label>            Set drive label (for both luks and decrypted) (e.g. omer-desktop)
-    \r  --enable-hibernation          Assign additional swap space & enable hibernation
+    \r  --enable-fido2=<device>       Enable FIDO2 device for encryption. Optionally specify a FIDO2 device (will be auto-detected otherwise)
+    \r  --enable-hibernation          Enable hibernation and assign additional swap space
+    \r  --enable-luks=<passphrase>    Enable drive encryption using LUKS. Optionally specify luks passphrase (will be prompted otherwise)
+    \r  --hostname=<label>            Set drive label (for both luks and decrypted) (e.g. omer-desktop)
     \r  --help                        Display this help message
     "
     exit 1
@@ -17,9 +17,9 @@ usage() {
 # check if specified fido2-device path is recognized by systemd-cryptenroll
 # INPUT: $1 -> specified fido2-device path
 validateFIDO2Device() {
-    [ "$(echo "$1")" = "--" ] && usage "fido2-device path cannot be empty"
-    [ ! "$(systemd-cryptenroll --fido2-device=list | awk 'NR>1 {print $1}' | grep -w "$1")" ] && usage "invalid fido2-device path specified"
-    [ "${#1}" -lt 1 ] && usage "fido2-device path cannot be empty"
+    [ "$(echo "$1")" = "--" ] && usage "FIDO2 device path cannot be empty"
+    [ "$(systemd-cryptenroll --fido2-device=list | wc -l)" -lt 1 ] && usage "no FIDO2 devices detected"
+    [ ! "$(systemd-cryptenroll --fido2-device=list | awk 'NR>1 {print $1}' | grep -w "$1")" ] && usage "invalid FIDO2 device path specified"
     return 0
 }
 
@@ -33,14 +33,17 @@ validateHostname() {
     return 0
 }
 
-enableLuks=false fido2Device= hostname= enableHibernation=false
-eval set --$(getopt --options "" --longoptions "enable-luks,fido2-device:,hostname:,enable-hibernation,help" -- "$@") || usage ""
+enableFIDO2=false fido2Device=
+enableHibernation=false
+enableLuks=false passphrase=
+hostname=
+eval set --$(getopt --options "" --longoptions "enable-luks::,enable-fido2::,hostname::,enable-hibernation,help" -- "$@") || usage ""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --enable-luks) enableLuks=true; shift 1;;
-        --fido2-device) validateFIDO2Device "$2"; fido2Device="$2"; shift 2;;
-        --hostname) validateHostname "$2"; hostname="$2"; shift 2;;
+        --enable-luks) enableLuks=true; passphrase="$2"; shift 2;;
         --enable-hibernation) enableHibernation=true; shift 1;;
+        --enable-fido2) validateFIDO2Device "$2"; enableFIDO2=true; fido2Device="$2"; shift 2;;
+        --hostname) validateHostname "$2"; hostname="$2"; shift 2;;
         --help) usage "Help flag provided"; shift 1;;
         --) shift; break;;
         *) usage "Invalid argument provided";;
@@ -64,9 +67,12 @@ case $# in
 esac
 
 # set default hostname to root if not specified
-[ -z "$hostname" ] && hostname="root"
+[ -z "$hostname" ] && hostname="root" && echo "no hostname specified... using root as default"
 
-# overwrite drive's previous contents with zeroes. Helps with some issues
+# make sure enable-luks is declared if enable-fido2 is declared
+[ "$enableFIDO2" = true ] && [ "$enableLuks" = false ] && usage "in order to use FIDO2, luks must be enabled."
+
+# overwrite drive's previous contents with zeroes
 wipe() {
     dd if="/dev/zero" of="$1" bs=4096 count="$(($(fdisk -l "$1" | awk 'NR==1 {print $7}')/8))" status=progress
 }
@@ -105,12 +111,18 @@ formatPrimary() {
     if [ "$enableLuks" = true ]; then
         echo -n "password" | cryptsetup luksFormat "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')" --label "$hostname-luks" --key-slot 2 --key-file -
         PASSWORD="password" systemd-cryptenroll --recovery-key "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')" > "$hostname-recovery.txt"
-        if [ ! -z "$fido2Device" ]; then
-            PASSWORD="$(cat $hostname-recovery.txt)" systemd-cryptenroll --fido2-device="$fido2Device" "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')"
+        if [ "$enableFIDO2" = true ]; then
+            if [ ! -z "$fido2Device" ]; then
+                PASSWORD="$(cat $hostname-recovery.txt)" systemd-cryptenroll --fido2-device="$fido2Device" "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')"
+            else
+                PASSWORD="$(cat $hostname-recovery.txt)" systemd-cryptenroll --fido2-device=auto "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')"
+            fi
+        elif [ ! -z "$passphrase" ]; then
+            echo -en "$(cat $hostname-recovery.txt)\n$passphrase\n$passphrase" | cryptsetup luksAddKey "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')"
         else
             echo -n "Enter a password for root partition encryption: "
             read password
-            echo -n "$password" | cryptsetup luksFormat "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')" --label "$hostname-luks" --key-file -
+            echo -en "$(cat $hostname-recovery.txt)\n$password\n$password" | cryptsetup luksAddKey "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')"
         fi
         PASSWORD="$(cat $hostname-recovery.txt)" systemd-cryptenroll --wipe-slot 2 "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')"
         echo -n "$(cat $hostname-recovery.txt)" | cryptsetup luksOpen "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')" "$hostname" --key-file -
@@ -159,7 +171,7 @@ formatPrimary() {
 
 createConfig() {
     nixos-generate-config --root /mnt
-    if [ ! -z "$fido2Device" ]; then
+    if [ "$enableFIDO2" = true ]; then
         sed -i "/boot.initrd.luks.devices.\"$hostname\".device = */a boot.initrd.luks.devices.\"$hostname\".crypttabExtraOpts = \[ \"fido2-device=auto\" \];" /mnt/etc/nixos/hardware-configuration.nix
     fi
     sed -i "s~swapDevices = \[ \];~swapDevices = \[ { device = \"/swap/swapfile\"; } \];~" /mnt/etc/nixos/hardware-configuration.nix
@@ -171,7 +183,7 @@ createConfig() {
         sed -i "s~options = \[ \"subvol=@\" \];~options = \[ \"subvol=@\" \"x-systemd.after=local-fs-pre.target\" \];~" /mnt/etc/nixos/hardware-configuration.nix # TODO: workaround for https://github.com/NixOS/nixpkgs/issues/213122
     fi
     if [ ! -d /sys/firmware/efi/efivars ]; then
-        sed -i "s~# boot.loader.grub.device = \"/dev/sda\";~boot.loader.grub.device = \"$device\";~" /mnt/etc/nixos/configuration.nix
+        sed -i "s~# boot.loader.grub.device = \"/dev/sda\";~boot.loader.grub.device = \"$drive\";~" /mnt/etc/nixos/configuration.nix
     fi
     sed -i "s~# networking.hostName = \"nixos\";~networking.hostName = \"$hostname\";~" /mnt/etc/nixos/configuration.nix
     sed -i "s~# networking.networkmanager.enable = true;~networking.networkmanager.enable = true;~" /mnt/etc/nixos/configuration.nix
