@@ -135,7 +135,7 @@ in
     # verify that client boots
     client = create_named_machine("client")
     client.start()
-    client.wait_for_console_text("Please enter recovery key for disk fido")
+    client.wait_for_console_text("Starting password query on")
     client.send_console(result + "\n")
     client.wait_for_unit("multi-user.target")
   '';
