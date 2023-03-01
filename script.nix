@@ -92,7 +92,7 @@ rec {
             sgdisk -n 0:0:+512M -t 0:ef00 "$drive"
             sgdisk -n 0:0:0 -t 0:8300 "$drive"
         else
-            wipe "$drive"
+            ${wipe}/bin/wipe "$drive"
             echo "Legacy detected"
             (
             echo o

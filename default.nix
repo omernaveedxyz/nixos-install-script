@@ -12,7 +12,7 @@
       pname = "nixos-install-script";
 
       # The package version.
-      version = "1.0.0";
+      version = "1.0.1";
 
       # The package source directory.
       src = ./.;
