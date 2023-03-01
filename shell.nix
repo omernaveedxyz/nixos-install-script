@@ -1,5 +1,7 @@
 { pkgs ? import <nixpkgs> { } }: pkgs.mkShell {
 
+  NIX_CONFIG = "experimental-features = nix-command flakes";
+
   # Run-time dependencies for running installation script.
   nativeBuildInputs = with pkgs; [
     git # Acess to repository

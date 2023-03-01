@@ -1,30 +1,15 @@
-{ pkgs ? import <nixpkgs> { } }: {
-
-  output =
-    let
-
-      script = import ./script.nix { inherit pkgs; };
-      inherit (script) installationScript;
-
-    in
-    pkgs.stdenv.mkDerivation {
-      # The package name.
-      pname = "nixos-install-script";
-
-      # The package version.
-      version = "1.0.1";
-
-      # The package source directory.
-      src = ./.;
-
-      # A shell script to run during the install phase.
-      installPhase = ''
-        mkdir -p $out/bin
-        cp ${installationScript}/bin/installationScript $out/bin
-        chmod +x $out/bin/installationScript
-      '';
+{ pkgs ? let
+    # If pkgs is not defined, instanciate nixpkgs from locked commit.
+    lock = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked;
+    nixpkgs = fetchTarball {
+      url = "https://github.com/nixos/nixpkgs/archive/${lock.rev}.tar.gz";
+      sha256 = lock.narHash;
     };
+  in
+  import nixpkgs { }
+}:
 
+{
   # Series of tests that can be run using `nix-build -A tests.<name>`
   tests = {
     default = pkgs.nixosTest ./tests/default.nix;
@@ -34,5 +19,4 @@
     fido = pkgs.nixosTest ./tests/fido.nix;
     fido2 = pkgs.nixosTest ./tests/fido2.nix;
   };
-
 }
