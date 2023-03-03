@@ -7,8 +7,7 @@ let
 
 in
 rec {
-
-  # Do not execute nixos-install from script. Will be run manually in testScript.
+  # do not execute nixos-install from script. Will be run manually in testScript
   install-script = (
     pkgs.writeShellScriptBin "install.sh" (
       builtins.replaceStrings [ "nixos-install --no-root-passwd" ] [ "" ] (
@@ -17,13 +16,13 @@ rec {
     )
   );
 
-  # Module used to mount client system configuration correctly.
+  # module used to mount client system configuration correctly
   installedSystem = (import <nixpkgs/nixos/lib/eval-config.nix> {
     inherit system;
     modules = [ installedConfig ];
   }).config.system.build.toplevel;
 
-  # Function to quickly create machines within the test script.
+  # function to quickly create machines within the test script
   createNamedMachine = ''
     def create_named_machine(name):
       machine = create_machine(
@@ -40,7 +39,8 @@ rec {
       return machine
   '';
 
-  # Function to quickly create a test case to make sure that improper flags are returning the correct error.
+  # function to quickly create a test case to make sure that improper flags are returning the
+  # correct error
   createFailTestCase = ''
     def create_fail_test_case(description, call):
       expected = machine.succeed(f"${usage}/bin/usage '{description}'")
@@ -48,7 +48,7 @@ rec {
       assert expected == result, f"Expected {expected}, got {result}"
   '';
 
-  # Function to quickly run the installation script and shutdown the installation machine.
+  # function to quickly run the installation script and shutdown the installation machine
   installConfiguration = ''
     def install_configuration(call):
       machine.succeed(
@@ -58,7 +58,7 @@ rec {
       )
   '';
 
-  # Test hostname flag fail test cases.
+  # test hostname flag fail test cases
   hostnameFailTestCases = ''
     create_fail_test_case("hostname cannot be empty", "--hostname /dev/vda")
     create_fail_test_case("hostname cannot end in hyphen", "--hostname=test- /dev/vda")
@@ -66,22 +66,21 @@ rec {
     create_fail_test_case("hostname cannot be empty", "--hostname= /dev/vda")
   '';
 
-  # Test drive argument fail test cases.
+  # test drive argument fail test cases
   driveFailTestCases = ''
     create_fail_test_case("must provide drive for installation", "")
     create_fail_test_case("invalid block device specified for drive path", "/dev/sda")
     create_fail_test_case("too many arguments", "/dev/sda /dev/vda")
   '';
 
-  # Test fido flag fail test cases.
+  # test fido flag fail test cases
   fidoFailTestCases = ''
     create_fail_test_case("no FIDO2 devices detected", "--enable-luks --enable-fido2 /dev/vda")
   '';
 
-  # Test fido flag fail test cases.
+  # test fido flag fail test cases
   fidoFailTestCases2 = ''
     create_fail_test_case("in order to use FIDO2, luks must be enabled.", "--hostname=fido --enable-fido2 /dev/vda")
     create_fail_test_case("invalid FIDO2 device path specified", "--enable-luks --enable-fido2=/tmp/doesnotexist /dev/vda")
   '';
-
 }

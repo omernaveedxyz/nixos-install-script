@@ -1,16 +1,26 @@
-{ pkgs ? import <nixpkgs> { } }: pkgs.mkShell {
+{ pkgs ? let
+    # if pkgs is not defined, instanciate nixpkgs from locked commit
+    lock = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked;
+    nixpkgs = fetchTarball {
+      url = "https://github.com/nixos/nixpkgs/archive/${lock.rev}.tar.gz";
+      sha256 = lock.narHash;
+    };
+  in
+  import nixpkgs { }
+}:
 
+pkgs.mkShell {
+  # enable experimental feature: nix flakes
   NIX_CONFIG = "experimental-features = nix-command flakes";
 
-  # Run-time dependencies for running installation script.
+  # run-time dependencies for running installation script
   nativeBuildInputs = with pkgs; [
-    git # Acess to repository
-    nix # Access nix-shell & nix-build commands
-    systemd # Access to systemd-cryptenroll
-    util-linux # Various system utilities
-    gptfdisk # Format UEFI partitions
-    dosfstools # Format into FAT32 partition
-    btrfs-progs # Format into BTRFS paritions
+    git # acess to repository
+    nix # access nix-shell & nix-build commands
+    systemd # access to systemd-cryptenroll
+    util-linux # various system utilities
+    gptfdisk # format UEFI partitions
+    dosfstools # format into FAT32 partition
+    btrfs-progs # format into BTRFS paritions
   ];
-
 }

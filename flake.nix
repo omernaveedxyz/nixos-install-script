@@ -1,34 +1,48 @@
 {
+  description = "nixos configuration";
 
-  # Specify code's dependencies in a declarative way.
+  # specify code's dependencies in a declarative way
   inputs = {
-    # Nix package collection
+    # nix package collection
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    # pure nix flake utility functions
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs }: {
-    defaultPackage.x86_64-linux = with import nixpkgs { system = "x86_64-linux"; };
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
       let
-        script = import ./script.nix { inherit pkgs; };
-        inherit (script) installationScript;
+        pkgs = import nixpkgs { inherit system; };
       in
-      stdenv.mkDerivation {
-        # The package name.
-        pname = "nixos-install-script";
+      {
+        # configuration to build the package.
+        # accessible through 'nix build'
+        defaultPackage = with pkgs;
+          let
+            script = import ./script.nix { inherit pkgs; };
+            inherit (script) installationScript;
+          in
+          stdenv.mkDerivation {
+            # the package name
+            pname = "nixos-install-script";
 
-        # The package version.
-        version = "1.1.1";
+            # the package version
+            version = "1.2.0";
 
-        # The package source directory.
-        src = self;
+            # the package source directory
+            src = self;
 
-        # A shell script to run during the install phase.
-        installPhase = ''
-          mkdir -p $out/bin
-          cp ${installationScript}/bin/installationScript $out/bin
-          chmod +x $out/bin/installationScript
-        '';
-      };
-  };
+            # a shell script to run during the install phase
+            installPhase = ''
+              mkdir -p $out/bin
+              cp ${installationScript}/bin/installationScript $out/bin
+              chmod +x $out/bin/installationScript
+            '';
+          };
 
+        # initiate development environment using nix develop
+        # accessible through 'nix develop' or 'nix-shell' (legacy)
+        devShells = import ./shell.nix { inherit pkgs; };
+      });
 }

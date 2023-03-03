@@ -1,5 +1,5 @@
 { pkgs ? let
-    # If pkgs is not defined, instanciate nixpkgs from locked commit.
+    # if pkgs is not defined, instanciate nixpkgs from locked commit
     lock = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked;
     nixpkgs = fetchTarball {
       url = "https://github.com/nixos/nixpkgs/archive/${lock.rev}.tar.gz";
@@ -10,7 +10,8 @@
 }:
 
 {
-  # Series of tests that can be run using `nix-build -A tests.<name>`
+  # series of tests that can be run to validate script functionality
+  # accessible through `nix-build -A tests.<name>`
   tests = {
     default = pkgs.nixosTest ./tests/default.nix;
     hibernate = pkgs.nixosTest ./tests/hibernate.nix;

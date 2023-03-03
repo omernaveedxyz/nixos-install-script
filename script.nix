@@ -1,7 +1,7 @@
 { pkgs }:
 
 rec {
-  # Print out script usage information to STDOUT.
+  # print out script usage information to STDOUT
   # INPUT: $1 -> error description
   usage = pkgs.writeShellScriptBin "usage" ''
     printf "%s\n" \
@@ -18,7 +18,7 @@ rec {
     exit 0
   '';
 
-  # Check if specified fido2-device path is valid.
+  # check if specified fido2-device path is valid
   # INPUT: $1 -> specified fido2-device path
   validateFIDO2Device = pkgs.writeShellScriptBin "validateFIDO2Device" ''
     [ "$(systemd-cryptenroll --fido2-device=list | wc -l)" -lt 2 ] && ${usage}/bin/usage "no FIDO2 devices detected" && exit 1
@@ -27,7 +27,7 @@ rec {
     exit 0
   '';
 
-  # Check if specified hostname matches all requirements for linux device hostnames.
+  # check if specified hostname matches all requirements for linux device hostnames
   # INPUT: $1 -> specified hostname
   validateHostname = pkgs.writeShellScriptBin "validateHostname" ''
     [ "$(echo "$1")" = "" ] && ${usage}/bin/usage "hostname cannot be empty" && exit 1
@@ -37,14 +37,14 @@ rec {
     exit 0
   '';
 
-  # Check if specified drive is recognized by the system
+  # check if specified drive is recognized by the syste
   # INPUT: $1 -> specified drive path
   validateDrive = pkgs.writeShellScriptBin "validateDrive" ''
     [ ! "$(lsblk -d -p --noheadings --raw | awk '{print $1}' | grep -w "$1")" ] && ${usage}/bin/usage "invalid block device specified for drive path" && exit 1
     exit 0
   '';
 
-  # Overwrite drive's previous contents with zeroes
+  # overwrite drive's previous contents with zeroes
   # INPUT: $1 -> specified drive path to be wiped
   wipe = pkgs.writeShellScriptBin "wipe" ''
     dd if="/dev/zero" of="$1" bs=4096 count="$(($(fdisk -l "$1" | awk 'NR==1 {print $7}')/8))" status=progress
@@ -69,7 +69,7 @@ rec {
         esac
     done
 
-    # Make sure only a single drive is specified and that it is a valid drive.
+    # make sure only a single drive is specified and that it is a valid drive
     drive=
     case $# in
         0) ${usage}/bin/usage "must provide drive for installation" && exit 1;;
@@ -77,15 +77,15 @@ rec {
         *) ${usage}/bin/usage "too many arguments" && exit 1;;
     esac
        
-    # Set default hostname to root if not specified.
+    # set default hostname to root if not specified
     [ -z "$hostname" ] && hostname="root" && echo "no hostname specified... using root as default"
 
-    # Make sure enable-luks is declared if enable-fido2 is declared.
+    # make sure enable-luks is declared if enable-fido2 is declared
     [ "$enableFIDO2" = true ] && [ "$enableLuks" = false ] && ${usage}/bin/usage "in order to use FIDO2, luks must be enabled." && exit 1
 
-    # Format specified drive.
+    # format specified drive.
     formatPrimary() {
-        # partition drive based on if UEFI or Legacy boot detected.
+        # partition drive based on if UEFI or Legacy boot detected
         if [ -d /sys/firmware/efi/efivars ]; then
             echo "UEFI detected"
             sgdisk -Z "$drive"
@@ -113,7 +113,7 @@ rec {
             ) | fdisk "$drive"
         fi
 
-        # Encrypt & format drive partitions.
+        # encrypt & format drive partitions
         mkfs.fat -F32 -n BOOT "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==2 {print $1}')"
         if [ "$enableLuks" = true ]; then
             echo -n "password" | cryptsetup luksFormat "$(lsblk -p --noheadings --raw "$drive" | awk 'NR==3 {print $1}')" --label "$hostname-luks" --key-slot 2 --key-file -
@@ -139,7 +139,7 @@ rec {
         fi
         mount --label "$hostname" /mnt
 
-        # Create btrfs subvolumes.
+        # create btrfs subvolumes
         btrfs subvolume create /mnt/@
         btrfs subvolume create /mnt/@nix
         btrfs subvolume create /mnt/@persistent
@@ -148,7 +148,7 @@ rec {
         btrfs subvolume snapshot -r /mnt/@ /mnt/@-blank
         umount /mnt
 
-        # Mount subvolumes.
+        # mount subvolumes
         mount -o subvol=@,compress=zstd,noatime --label "$hostname" /mnt
         mkdir -p /mnt/{boot,nix,persistent,swap,snapshots}
         mount -o subvol=@nix,compress=zstd,noatime --label "$hostname" /mnt/nix
@@ -157,7 +157,7 @@ rec {
         mount -o subvol=@snapshots,compress=zstd,noatime --label "$hostname" /mnt/snapshots
         mount --label "BOOT" /mnt/boot
 
-        # Create swapfile based on size of system memory.
+        # create swapfile based on size of system memory
         SIZE="4g"
         if [ "$enableHibernation" = true ]; then
             MEMORY="$(grep MemTotal /proc/meminfo | awk '{print $2}')"
@@ -175,7 +175,7 @@ rec {
         swapon /mnt/swap/swapfile
     }
 
-    # Update auto-generated configuration.nix & hardware-configuration.nix files.
+    # update auto-generated configuration.nix & hardware-configuration.nix files
     createConfig() {
         nixos-generate-config --root /mnt
         if [ "$enableFIDO2" = true ]; then

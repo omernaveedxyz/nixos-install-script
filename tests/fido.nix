@@ -6,7 +6,7 @@ let
   inherit (helpers) install-script createNamedMachine createFailTestCase installConfiguration
     hostnameFailTestCases driveFailTestCases fidoFailTestCases2;
 
-  # Configuration of client machine afer installation.
+  # configuration of client machine afer installation
   installedConfig = {
     imports = [ (import ./helpers/clientConfig.nix { hostName = "fido"; }) ];
 
@@ -18,7 +18,7 @@ in
 {
   name = "FIDO Configuration Test";
 
-  # Configuration of machine for install.
+  # configuration of machine for install
   nodes.machine = {
     imports = [ (import ./helpers/machineConfig.nix { inherit lib; }) ];
 
@@ -26,7 +26,7 @@ in
     virtualisation.qemu.options = [ "-device canokey,file=/tmp/canokey-file" ];
   };
 
-  # Script that will be run for this particular test.
+  # script that will be run for this particular test
   testScript = ''
     ${createNamedMachine}
     ${createFailTestCase}
@@ -38,12 +38,12 @@ in
     ${driveFailTestCases}
     ${fidoFailTestCases2}
 
-    # Install configuration onto machine.
+    # install configuration onto machine
     install_configuration("echo y | ${install-script}/bin/install.sh --hostname=fido --enable-luks --enable-fido2 /dev/vda")
     result = machine.succeed("cat fido-recovery.txt").strip()
     machine.shutdown()
 
-    # Verify that client boots.
+    # verify that client boots
     client = create_named_machine("client")
     client.start()
     client.wait_for_console_text("Starting password query on")

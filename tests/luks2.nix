@@ -6,7 +6,7 @@ let
   inherit (helpers) install-script createNamedMachine createFailTestCase installConfiguration
     hostnameFailTestCases driveFailTestCases fidoFailTestCases;
 
-  # Configuration of client machine afer installation.
+  # configuration of client machine afer installation
   installedConfig = {
     imports = [ (import ./helpers/clientConfig.nix { hostName = "luks"; }) ];
 
@@ -17,12 +17,12 @@ in
 {
   name = "Luks Configuration Test p.2";
 
-  # Configuration of machine for install.
+  # configuration of machine for install
   nodes.machine = {
     imports = [ (import ./helpers/machineConfig.nix { inherit lib; }) ];
   };
 
-  # Script that will be run for this particular test.
+  # script that will be run for this particular test
   testScript = ''
     ${createNamedMachine}
     ${createFailTestCase}
@@ -34,18 +34,18 @@ in
     ${driveFailTestCases}
     ${fidoFailTestCases}
 
-    # Install configuration onto machine.
+    # install configuration onto machine
     install_configuration("echo -en \"y\nsupersecretpassword\n\" | ${install-script}/bin/install.sh --hostname=luks --enable-luks /dev/vda")
     machine.shutdown()
 
-    # Verify that client boots.
+    # verify that client boots
     client = create_named_machine("client")
     client.start()
     client.wait_for_console_text("Starting password query on")
     client.send_console("supersecretpassword\n")
     client.wait_for_unit("multi-user.target")
         
-    # Various checks to make sure client configured correctly.
+    # various checks to make sure client configured correctly
     assert "luks" in client.succeed("hostname")
     assert "4G" in client.succeed("swapon --show | awk 'NR==2 {print $3}'")
     assert "/dev/mapper/luks on / type btrfs" in client.succeed("mount")

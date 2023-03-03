@@ -6,7 +6,7 @@ let
   inherit (helpers) install-script createNamedMachine createFailTestCase installConfiguration
     hostnameFailTestCases driveFailTestCases;
 
-  # Configuration of client machine afer installation.
+  # configuration of client machine afer installation
   installedConfig = {
     imports = [ (import ./helpers/clientConfig.nix { hostName = "root"; }) ];
   };
@@ -15,12 +15,12 @@ in
 {
   name = "Default Configuration Test";
 
-  # Configuration of machine for install.
+  # configuration of machine for install
   nodes.machine = {
     imports = [ (import ./helpers/machineConfig.nix { inherit lib; }) ];
   };
 
-  # Script that will be run for this particular test.
+  # script that will be run for this particular test
   testScript = ''
     ${createNamedMachine}
     ${createFailTestCase}
@@ -31,15 +31,15 @@ in
     ${hostnameFailTestCases}
     ${driveFailTestCases}
 
-    # Install configuration onto machine.
+    # install configuration onto machine
     install_configuration("echo y | ${install-script}/bin/install.sh /dev/vda")
     machine.shutdown()
 
-    # Verify that client boots.
+    # verify that client boots
     client = create_named_machine("client")
     client.start()
 
-    # Various checks to make sure client configured correctly.
+    # various checks to make sure client configured correctly
     assert "root" in client.succeed("hostname")
     assert "4G" in client.succeed("swapon --show | awk 'NR==2 {print $3}'")
     assert "/dev/vda2 on / type btrfs" in client.succeed("mount")
