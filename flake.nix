@@ -13,22 +13,26 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
+
         pkgs = import nixpkgs { inherit system; };
+
       in
       {
         # configuration to build the package.
         # accessible through 'nix build'
         defaultPackage = with pkgs;
           let
+
             script = import ./script.nix { inherit pkgs; };
             inherit (script) installationScript;
+
           in
           stdenv.mkDerivation {
             # the package name
             pname = "nixos-install-script";
 
             # the package version
-            version = "1.2.0";
+            version = "1.2.1";
 
             # the package source directory
             src = self;
