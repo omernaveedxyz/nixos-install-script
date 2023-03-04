@@ -35,7 +35,7 @@ in
     ${fidoFailTestCases}
 
     # install configuration onto machine
-    install_configuration("echo -en \"y\nsupersecretpassword\n\" | ${install-script}/bin/install.sh --hostname=luks --enable-luks /dev/vda")
+    install_configuration("echo -en \"y\nsupersecretpassword\n\" | ${install-script}/bin/install.sh --hostname=luks --luks /dev/vda")
     machine.shutdown()
 
     # verify that client boots

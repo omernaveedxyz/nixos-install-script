@@ -39,7 +39,7 @@ in
     ${fidoFailTestCases2}
 
     # install configuration onto machine.
-    install_configuration("echo y | ${install-script}/bin/install.sh --hostname=fido --enable-luks --enable-fido2=/dev/hidraw1 /dev/vda")
+    install_configuration("echo y | ${install-script}/bin/install.sh --hostname=fido --luks --fido2=/dev/hidraw1 /dev/vda")
     result = machine.succeed("cat fido-recovery.txt").strip()
     machine.shutdown()
 

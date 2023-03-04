@@ -34,7 +34,7 @@ in
     ${driveFailTestCases}
 
     # install configuration onto machine
-    install_configuration("echo y | ${install-script}/bin/install.sh --hostname=luks --enable-luks=supersecretpassword /dev/vda")
+    install_configuration("echo y | ${install-script}/bin/install.sh --hostname=luks --luks=supersecretpassword /dev/vda")
     machine.shutdown()
 
     # verify that client boots

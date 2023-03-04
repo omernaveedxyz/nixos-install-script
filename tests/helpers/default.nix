@@ -75,12 +75,12 @@ rec {
 
   # test fido flag fail test cases
   fidoFailTestCases = ''
-    create_fail_test_case("no FIDO2 devices detected", "--enable-luks --enable-fido2 /dev/vda")
+    create_fail_test_case("no FIDO2 devices detected", "--luks --fido2 /dev/vda")
   '';
 
   # test fido flag fail test cases
   fidoFailTestCases2 = ''
-    create_fail_test_case("in order to use FIDO2, luks must be enabled.", "--hostname=fido --enable-fido2 /dev/vda")
-    create_fail_test_case("invalid FIDO2 device path specified", "--enable-luks --enable-fido2=/tmp/doesnotexist /dev/vda")
+    create_fail_test_case("in order to use FIDO2, luks must be enabled.", "--hostname=fido --fido2 /dev/vda")
+    create_fail_test_case("invalid FIDO2 device path specified", "--luks --fido2=/tmp/doesnotexist /dev/vda")
   '';
 }

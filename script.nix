@@ -10,9 +10,9 @@ rec {
         "Usage: installationScript [OPTIONS] <drive>" \
         "" \
         "Options:" \
-        "  --enable-fido2=<device>       Enable FIDO2 device for encryption. Optionally specify a FIDO2 device (will be auto-detected otherwise)" \
-        "  --enable-hibernation          Enable hibernation and assign additional swap space" \
-        "  --enable-luks=<passphrase>    Enable drive encryption using LUKS. Optionally specify luks passphrase (will be prompted otherwise)" \
+        "  --fido2=<device>              Enable FIDO2 device for encryption. Optionally specify a FIDO2 device (will be auto-detected otherwise)" \
+        "  --hibernation                 Enable hibernation and assign additional swap space" \
+        "  --luks=<passphrase>           Enable drive encryption using LUKS. Optionally specify luks passphrase (will be prompted otherwise)" \
         "  --hostname=<label>            Set drive label (for both luks and decrypted) (e.g. omer-desktop)" \
         "  --help                        Display this help message"
     exit 0
@@ -56,12 +56,12 @@ rec {
     enableHibernation=false
     enableLuks=false passphrase=
     hostname=
-    eval set --$(getopt --options "" --longoptions "enable-luks::,enable-fido2::,hostname::,enable-hibernation,help" -- "$@") || ${usage}/bin/usage ""
+    eval set --$(getopt --options "" --longoptions "luks::,fido2::,hostname::,hibernation,help" -- "$@") || ${usage}/bin/usage ""
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --enable-luks) enableLuks=true && passphrase="$2" && shift 2 || exit 1;;
-            --enable-hibernation) enableHibernation=true && shift 1 || exit 1;;
-            --enable-fido2) ${validateFIDO2Device}/bin/validateFIDO2Device "$2" && enableFIDO2=true && fido2Device="$2" && shift 2 || exit 1;;
+            --luks) enableLuks=true && passphrase="$2" && shift 2 || exit 1;;
+            --hibernation) enableHibernation=true && shift 1 || exit 1;;
+            --fido2) ${validateFIDO2Device}/bin/validateFIDO2Device "$2" && enableFIDO2=true && fido2Device="$2" && shift 2 || exit 1;;
             --hostname) ${validateHostname}/bin/validateHostname "$2" && hostname="$2" && shift 2 || exit 1;;
             --help) ${usage}/bin/usage "Help flag provided" && shift 1 || exit 1;;
             --) shift; break;;

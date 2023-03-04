@@ -42,7 +42,7 @@ in
     ${driveFailTestCases}
 
     # install configuration onto machine
-    install_configuration("echo y | ${install-script}/bin/install.sh --hostname=hibernate --enable-hibernation /dev/vda")
+    install_configuration("echo y | ${install-script}/bin/install.sh --hostname=hibernate --hibernation /dev/vda")
     machine.shutdown()
 
     # verify that client boots
