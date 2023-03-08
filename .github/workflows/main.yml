@@ -16,105 +16,133 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix flake update        
+    - run: nix flake update        
+    - uses: actions/upload-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
   test-default:
     runs-on: ubuntu-latest
     needs: update-flake
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix-build -A tests.default
+    - run: nix-build -A tests.default
   test-fido:
     runs-on: ubuntu-latest
     needs: update-flake
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix-build -A tests.fido
+    - run: nix-build -A tests.fido
   test-fido2:
     runs-on: ubuntu-latest
     needs: update-flake
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix-build -A tests.fido2
+    - run: nix-build -A tests.fido2
   test-hibernate:
     runs-on: ubuntu-latest
     needs: update-flake
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix-build -A tests.hibernate
+    - run: nix-build -A tests.hibernate
   test-hibernate2:
     runs-on: ubuntu-latest
     needs: update-flake
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix-build -A tests.hibernate2
+    - run: nix-build -A tests.hibernate2
   test-luks:
     runs-on: ubuntu-latest
     needs: update-flake
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix-build -A tests.luks
+    - run: nix-build -A tests.luks
   test-luks2:
     runs-on: ubuntu-latest
     needs: update-flake
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        nix-build -A tests.luks2
+    - run: nix-build -A tests.luks2
   push-to-master:
     runs-on: ubuntu-latest
     needs: [ test-default, test-fido, test-fido2, test-hibernate, test-hibernate2, test-luks, test-luks2  ]
     if: github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: flake.lock
+        path: ./flake.lock
     - run: |
         git config user.name "Omer Naveed"
         git config user.email "omer@omernaveed.dev"
