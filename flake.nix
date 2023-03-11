@@ -32,7 +32,7 @@
             pname = "nixos-install-script";
 
             # the package version
-            version = "1.4.0";
+            version = "1.4.1";
 
             # the package source directory
             src = self;

@@ -17,10 +17,5 @@ pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     git # acess to repository
     nix # access nix-shell & nix-build commands
-    systemd # access to systemd-cryptenroll
-    util-linux # various system utilities
-    gptfdisk # format UEFI partitions
-    dosfstools # format into FAT32 partition
-    btrfs-progs # format into BTRFS paritions
   ];
 }
