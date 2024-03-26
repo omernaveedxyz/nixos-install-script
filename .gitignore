@@ -1,0 +1,5 @@
+# Ignore editor and IDE-specific files and directories
+/.direnv
+
+# Ignore generated build files and directories
+/result

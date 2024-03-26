@@ -1,0 +1,176 @@
+name: Run Integration Tests
+
+on:
+  pull_request:
+    branches: 'main'
+
+jobs:
+  base-configuration-test:
+    name: "Base Configuration Test"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Maximize Disk Space'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          docker image prune --all --force
+
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: 'Fetch All Branches'
+        run: git fetch origin
+
+      - name: 'Checkout New Branch'
+        run: git checkout ${{ github.head_ref }}
+
+      - name: 'Pull Changes to New Branch'
+        run: git pull
+
+      - name: 'Install Nix Package Manager'
+        uses: cachix/install-nix-action@v26
+        with:
+          extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Run Test'
+        run: nix build -L .#checks.x86_64-linux.base
+
+  hibernate-configuration-test:
+    name: "Hibernate Configuration Test"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Maximize Disk Space'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          docker image prune --all --force
+
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: 'Fetch All Branches'
+        run: git fetch origin
+
+      - name: 'Checkout New Branch'
+        run: git checkout ${{ github.head_ref }}
+
+      - name: 'Pull Changes to New Branch'
+        run: git pull
+
+      - name: 'Install Nix Package Manager'
+        uses: cachix/install-nix-action@v26
+        with:
+          extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Run Test'
+        run: nix build -L .#checks.x86_64-linux.hibernate
+
+  luks-configuration-test:
+    name: "LUKS Configuration Test"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Maximize Disk Space'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          docker image prune --all --force
+
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: 'Fetch All Branches'
+        run: git fetch origin
+
+      - name: 'Checkout New Branch'
+        run: git checkout ${{ github.head_ref }}
+
+      - name: 'Pull Changes to New Branch'
+        run: git pull
+
+      - name: 'Install Nix Package Manager'
+        uses: cachix/install-nix-action@v26
+        with:
+          extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Run Test'
+        run: nix build -L .#checks.x86_64-linux.luks
+
+  fido-configuration-test:
+    name: "FIDO Configuration Test"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Maximize Disk Space'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          docker image prune --all --force
+
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: 'Fetch All Branches'
+        run: git fetch origin
+
+      - name: 'Checkout New Branch'
+        run: git checkout ${{ github.head_ref }}
+
+      - name: 'Pull Changes to New Branch'
+        run: git pull
+
+      - name: 'Install Nix Package Manager'
+        uses: cachix/install-nix-action@v26
+        with:
+          extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Run Test'
+        run: nix build -L .#checks.x86_64-linux.fido
+
+  luks-hibernate-configuration-test:
+    name: "LUKS+Hibernate Configuration Test"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Maximize Disk Space'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          docker image prune --all --force
+
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: 'Fetch All Branches'
+        run: git fetch origin
+
+      - name: 'Checkout New Branch'
+        run: git checkout ${{ github.head_ref }}
+
+      - name: 'Pull Changes to New Branch'
+        run: git pull
+
+      - name: 'Install Nix Package Manager'
+        uses: cachix/install-nix-action@v26
+        with:
+          extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Run Test'
+        run: nix build -L .#checks.x86_64-linux.luks-hibernate

@@ -1,0 +1,26 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-release:
+    name: 'Create Release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: 'Set Release Details'
+        run: |
+          echo "TAG=$(date +%F)" >> $GITHUB_ENV
+          echo "COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: 'Create Release'
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          allowUpdates: true
+          commit: ${{ env.COMMIT }}
+          generateReleaseNotes: true
+          tag: ${{ env.TAG }}

@@ -1,0 +1,32 @@
+name: Update Flake Lock
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+
+jobs:
+  update-flake-lock:
+    name: "Update Flake Lock"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout GitHub Action"
+        uses: actions/checkout@v4
+
+      - name: "Install Nix Package Manager"
+        uses: cachix/install-nix-action@v26
+        with:
+          extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Set Date Environment Variable"
+        run: echo "DATE=$(date +%F)" >> $GITHUB_ENV
+
+      - name: "Update Flake Lock"
+        uses: DeterminateSystems/update-flake-lock@v21
+        with:
+          commit-msg: "flake.lock: update"
+          pr-title: "Update Flake Lock (${{ env.DATE }})"
+          pr-labels: |
+            dependencies
+            nix
