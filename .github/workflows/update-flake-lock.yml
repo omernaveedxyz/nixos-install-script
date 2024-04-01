@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: "Checkout GitHub Action"
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN }}
 
       - name: "Install Nix Package Manager"
         uses: cachix/install-nix-action@v26
