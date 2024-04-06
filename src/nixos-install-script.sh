@@ -281,6 +281,7 @@ generate_config_file()
     sed -i "/^}/i services.openssh.enable = true;" /mnt/etc/nixos/configuration.nix
     sed -i "/^}/i nix.settings.trusted-users = [ \"@wheel\" ];" /mnt/etc/nixos/configuration.nix
     sed -i "/^}/i boot.initrd.systemd.enable = true;" /mnt/etc/nixos/configuration.nix
+    sed -i "/^}/i nix.settings.experimental-features = [ \"nix-command\" \"flakes\" ];" /mnt/etc/nixos/configuration.nix
 
     if test "${_arg_testing:-off}" = on; then
         sed -i "/^}/i documentation.enable = false;" /mnt/etc/nixos/configuration.nix
