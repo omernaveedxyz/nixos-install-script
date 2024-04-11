@@ -16,7 +16,9 @@
     + ''
       disk_fail_test_cases()
       hostname_fail_test_cases()
+      filesystem_fail_test_cases()
       fido_fail_test_cases()
+      hibernation_fail_test_cases()
       confirmation_fail_test_cases()
 
       installation_script("echo -en \"yes\nsupersecretpassword\n\" | nixos-install-script --testing --hostname=luks-hibernate --hibernation --luks /dev/vda")

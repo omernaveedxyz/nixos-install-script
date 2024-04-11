@@ -29,18 +29,20 @@ _arg_hibernation="off"
 _arg_luks="off"
 _arg_hostname="nixos"
 _arg_testing="off"
+_arg_filesystem="btrfs"
 
 # Function that prints general usage of the script.
 # This is useful if users asks for it, or if there is an argument parsing error (unexpected / spurious arguments)
 # and it makes sense to remind the user how the script is supposed to be called.
 print_help()
 {
-    printf 'Usage: %s [--fido] [--hibernation] [--luks] [--hostname <arg>] [--help] <disk>\n' "$0"
+    printf 'Usage: %s [--fido] [--hibernation] [--luks] [--hostname <arg>] [--filesystem <arg>] [--help] <disk>\n' "$0"
     printf '\t%s\n' "<disk>: disk to install NixOS to"
     printf '\t%s\n' "--fido: add FIDO2 key to LUKS encryption (off by default)"
     printf '\t%s\n' "--hibernation: assign additional space to swapfile for hibernation (off by default)"
     printf '\t%s\n' "--luks: enable LUKS disk encryption (off by default)"
     printf '\t%s\n' "--hostname: hostname of device (default: 'nixos')"
+    printf '\t%s\n' "--filesystem: filesystem to format root partition as (default: 'btrfs')"
     printf '\t%s\n' "--help: Prints help"
 }
 
@@ -69,8 +71,16 @@ parse_commandline()
                 _arg_hostname="$2"
                 shift
                 ;;
+            --filesystem)
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                _arg_filesystem="$2"
+                shift
+                ;;
             --hostname=*)
                 _arg_hostname="${_key##--hostname=}"
+                ;;
+            --filesystem=*)
+                _arg_filesystem="${_key##--filesystem=}"
                 ;;
             -*)
                 print_help
@@ -144,6 +154,13 @@ validate_hostname()
     fi
 }
 
+validate_filesystem()
+{
+    if [[ $_arg_filesystem != @(btrfs|zfs) ]]; then
+        die "FATAL ERROR: filesystem must be one of the following options (btrfs|zfs) (specified: '$_arg_filesystem')." 1
+    fi
+}
+
 validate_fido()
 {
     if test "${_arg_fido:-off}" = on; then
@@ -151,6 +168,15 @@ validate_fido()
             die "FATAL ERROR: unable to find FIDO2 device to enroll." 1
         elif test "${_arg_luks:-off}" = off; then
             die "FATAL ERROR: LUKS flag must be enabled in order to enroll FIDO2 device." 1
+        fi
+    fi
+}
+
+validate_hibernation()
+{
+    if test "${_arg_hibernation:-off}" = on; then
+        if [[ $_arg_filesystem == "zfs" ]]; then
+            die "FATAL ERROR: 'zfs' filesystem does not support hibernation."
         fi
     fi
 }
@@ -173,7 +199,9 @@ ask_confirmation()
 
 validate_disk
 validate_hostname
+validate_filesystem
 validate_fido
+validate_hibernation
 validate_root
 ask_confirmation
 
@@ -209,30 +237,78 @@ format_partitions()
         fi
         PASSWORD=$(cat luks-recovery.txt) systemd-cryptenroll --wipe-slot 2 "/dev/disk/by-label/$_arg_hostname-luks"
         echo -n "$(cat luks-recovery.txt)" | cryptsetup luksOpen "/dev/disk/by-label/$_arg_hostname-luks" "$_arg_hostname" --key-file -
-        mkfs.btrfs --force --label "$_arg_hostname" "/dev/mapper/$_arg_hostname"
+        if test "${_arg_filesystem:-btrfs}" = "zfs"; then
+            zpool create \
+                -o ashift=12 \
+                -O xattr=sa \
+                -O compression=lz4 \
+                -O relatime=on \
+                -o autotrim=on \
+                -O acltype=posixacl \
+                -O canmount=off \
+                -O dnodesize=auto \
+                -O normalization=formD \
+                -O mountpoint=none \
+                -R /mnt \
+                "$_arg_hostname" \
+                "/dev/mapper/$_arg_hostname"
+        else
+            mkfs.btrfs --force --label "$_arg_hostname" "/dev/mapper/$_arg_hostname"
+        fi
     else
-        mkfs.btrfs --force --label "$_arg_hostname" "$(lsblk --paths --noheadings --raw --output=NAME "$_arg_disk" | awk 'NR==3')"
+        if test "${_arg_filesystem:-btrfs}" = "zfs"; then
+            zpool create \
+                -o ashift=12 \
+                -O xattr=sa \
+                -O compression=lz4 \
+                -O relatime=on \
+                -o autotrim=on \
+                -O acltype=posixacl \
+                -O canmount=off \
+                -O dnodesize=auto \
+                -O normalization=formD \
+                -O mountpoint=none \
+                -R /mnt \
+                "$_arg_hostname" \
+                "$(lsblk --paths --noheadings --raw --output=NAME "$_arg_disk" | awk 'NR==3')"
+        else
+            mkfs.btrfs --force --label "$_arg_hostname" "$(lsblk --paths --noheadings --raw --output=NAME "$_arg_disk" | awk 'NR==3')"
+        fi
     fi
 }
 
-create_btrfs_subvolumes()
+create_volumes()
 {
-    mount --label "$_arg_hostname" /mnt
-    btrfs subvolume create /mnt/root
-    btrfs subvolume create /mnt/nix
-    btrfs subvolume create /mnt/persistent
-    test "${_arg_hibernation:-off}" = on && btrfs subvolume create /mnt/swap
-    btrfs subvolume create /mnt/snapshots
-    btrfs subvolume create /mnt/log
-    umount /mnt
+    if test "${_arg_filesystem:-btrfs}" = "zfs"; then
+        zfs create -o canmount=noauto -o mountpoint=legacy "$_arg_hostname"/root
+        zfs create -o mountpoint=legacy "$_arg_hostname"/nix
+        zfs create -o mountpoint=legacy "$_arg_hostname"/persistent
+        zfs create -o mountpoint=legacy "$_arg_hostname"/log
+        zfs snapshot "$_arg_hostname"/root@blank
 
-    mount --options subvol=root,compress=zstd,noatime -t btrfs --label "$_arg_hostname" /mnt
-    mount --options X-mount.mkdir,subvol=nix,compress=zstd,noatime -t btrfs  --label "$_arg_hostname" /mnt/nix
-    mount --options X-mount.mkdir,subvol=persistent,compress=zstd,noatime -t btrfs  --label "$_arg_hostname" /mnt/persistent
-    test "${_arg_hibernation:-off}" = on && mount --options X-mount.mkdir,subvol=swap,compress=zstd,noatime -t btrfs  --label "$_arg_hostname" /mnt/swap
-    mount --options X-mount.mkdir,subvol=snapshots,compress=zstd,noatime -t btrfs  --label "$_arg_hostname" /mnt/snapshots
-    mount --options X-mount.mkdir,subvol=log,compress=zstd,noatime -t btrfs  --label "$_arg_hostname" /mnt/var/log
-    mount --options X-mount.mkdir -t vfat  --label BOOT /mnt/boot
+        mount -t zfs "$_arg_hostname"/root /mnt
+        mount --options X-mount.mkdir -t zfs "$_arg_hostname"/nix /mnt/nix
+        mount --options X-mount.mkdir -t zfs "$_arg_hostname"/persistent /mnt/persistent
+        mount --options X-mount.mkdir -t zfs "$_arg_hostname"/log /mnt/var/log
+        mount --options X-mount.mkdir -t vfat --label BOOT /mnt/boot
+    else
+        mount --label "$_arg_hostname" /mnt
+        btrfs subvolume create /mnt/root
+        btrfs subvolume create /mnt/nix
+        btrfs subvolume create /mnt/persistent
+        test "${_arg_hibernation:-off}" = on && btrfs subvolume create /mnt/swap
+        btrfs subvolume create /mnt/snapshots
+        btrfs subvolume create /mnt/log
+        umount /mnt
+
+        mount --options subvol=root,compress=zstd,noatime -t btrfs --label "$_arg_hostname" /mnt
+        mount --options X-mount.mkdir,subvol=nix,compress=zstd,noatime -t btrfs --label "$_arg_hostname" /mnt/nix
+        mount --options X-mount.mkdir,subvol=persistent,compress=zstd,noatime -t btrfs --label "$_arg_hostname" /mnt/persistent
+        test "${_arg_hibernation:-off}" = on && mount --options X-mount.mkdir,subvol=swap,compress=zstd,noatime -t btrfs --label "$_arg_hostname" /mnt/swap
+        mount --options X-mount.mkdir,subvol=snapshots,compress=zstd,noatime -t btrfs --label "$_arg_hostname" /mnt/snapshots
+        mount --options X-mount.mkdir,subvol=log,compress=zstd,noatime -t btrfs --label "$_arg_hostname" /mnt/var/log
+        mount --options X-mount.mkdir -t vfat --label BOOT /mnt/boot
+    fi
 }
 
 create_swapfile()
@@ -283,6 +359,18 @@ generate_config_file()
     sed -i "/^}/i boot.initrd.systemd.enable = true;" /mnt/etc/nixos/configuration.nix
     sed -i "/^}/i nix.settings.experimental-features = [ \"nix-command\" \"flakes\" ];" /mnt/etc/nixos/configuration.nix
 
+    if test "${_arg_filesystem:-btrfs}" = "zfs"; then
+        sed -i "/^}/i networking.hostId = \"$(head -c4 /dev/urandom | od -A none -t x4 | tr -d ' ')\";" /mnt/etc/nixos/configuration.nix
+        sed -i "/^}/i services.zfs.autoScrub.enable = true;" /mnt/etc/nixos/configuration.nix
+        sed -i "/^}/i services.zfs.trim.enable = true;" /mnt/etc/nixos/configuration.nix
+        if test "${_arg_luks:-off}" = on; then
+            sed -i "/^}/i boot.initrd.luks.devices.\"luks\".device = \"/dev/disk/by-label/$_arg_hostname-luks\";" /mnt/etc/nixos/hardware-configuration.nix
+        fi
+        if test "${_arg_testing:-off}" = on; then
+            sed -i "/^}/i boot.zfs.devNodes = \"/dev/disk/by-label\";" /mnt/etc/nixos/configuration.nix
+        fi
+    fi
+
     if test "${_arg_testing:-off}" = on; then
         sed -i "/^}/i documentation.enable = false;" /mnt/etc/nixos/configuration.nix
         sed -i "/.\\/hardware-configuration.nix/a <nixpkgs/nixos/modules/testing/test-instrumentation.nix>" /mnt/etc/nixos/configuration.nix
@@ -304,7 +392,7 @@ main()
 {
     format_disk
     format_partitions
-    create_btrfs_subvolumes
+    create_volumes
     create_swapfile
     generate_config_file
     perform_installation

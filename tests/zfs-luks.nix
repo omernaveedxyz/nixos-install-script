@@ -3,7 +3,7 @@
   pkgs,
   ...
 }: {
-  name = "Base Configuration Test";
+  name = "ZFS+LUKS Configuration Test";
   nodes = import ./common/nodes.nix {inherit lib pkgs;};
   testScript = {nodes, ...}:
     ''
@@ -18,13 +18,14 @@
       hibernation_fail_test_cases()
       confirmation_fail_test_cases()
 
-      installation_script("echo yes | nixos-install-script --testing /dev/vda")
+      installation_script("echo -en \"yes\nsupersecretpassword\n\" | nixos-install-script --testing --hostname=luks --luks --filesystem zfs /dev/vda")
 
       base_shutdown()
       boot_new_machine()
+      decrypt_luks()
       base_verification()
-      hostname_verification("nixos")
-      disk_mounted_verification()
+      hostname_verification("luks")
+      zfs_disk_mounted_verification("luks")
       shutdown()
     '';
 }

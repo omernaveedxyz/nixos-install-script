@@ -16,7 +16,9 @@
     + ''
       disk_fail_test_cases()
       hostname_fail_test_cases()
+      filesystem_fail_test_cases()
       fido_fail_test_cases()
+      hibernation_fail_test_cases()
       confirmation_fail_test_cases()
 
       installation_script("echo yes | nixos-install-script --testing --hostname=fido --luks --fido /dev/vda")

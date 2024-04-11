@@ -30,6 +30,7 @@ in
       cryptsetup
       nixos-install-tools
       gnused
+      zfs
     ];
 
     # A shell script to run during the install phase

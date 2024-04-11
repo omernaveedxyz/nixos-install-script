@@ -3,7 +3,7 @@
   pkgs,
   ...
 }: {
-  name = "Base Configuration Test";
+  name = "ZFS Configuration Test";
   nodes = import ./common/nodes.nix {inherit lib pkgs;};
   testScript = {nodes, ...}:
     ''
@@ -18,13 +18,13 @@
       hibernation_fail_test_cases()
       confirmation_fail_test_cases()
 
-      installation_script("echo yes | nixos-install-script --testing /dev/vda")
+      installation_script("echo yes | nixos-install-script --testing --filesystem zfs /dev/vda")
 
       base_shutdown()
       boot_new_machine()
       base_verification()
       hostname_verification("nixos")
-      disk_mounted_verification()
+      zfs_disk_mounted_verification("nixos")
       shutdown()
     '';
 }

@@ -36,9 +36,19 @@ def hostname_fail_test_cases():
         create_fail_test_case("--hostname=inc0r^ct /dev/vda")
         create_fail_test_case("--hostname=1111111111111111111111111111111111111111111111111111111111111111 /dev/vda")
 
+def filesystem_fail_test_cases():
+    with subtest("Check that incorrect filesystem parameter fails"):
+        create_fail_test_case("--filesystem")
+        create_fail_test_case("--filesystem= /dev/vda")
+        create_fail_test_case("--filesystem=ext4 /dev/vda")
+
 def fido_fail_test_cases():
     with subtest("Check that incorrect fido parameter fails"):
         create_fail_test_case("--fido /dev/vda")
+
+def hibernation_fail_test_cases():
+    with subtest("Check that incorrect filesystem parameter fails with hibernation"):
+        create_fail_test_case("--hibernation --filesystem=zfs /dev/vda")
 
 def confirmation_fail_test_cases():
     with subtest("Check that declining confirmation works"):
@@ -104,6 +114,13 @@ def disk_mounted_verification():
         assert "/dev/vda2 on /persistent type btrfs" in machine.succeed("mount")
         assert "/dev/vda2 on /snapshots type btrfs" in machine.succeed("mount")
         assert "/dev/vda2 on /var/log type btrfs" in machine.succeed("mount")
+
+def zfs_disk_mounted_verification(hostname):
+    with subtest("Check whether drive is mounted correctly"):
+        assert "/dev/vda1 on /boot type vfat" in machine.succeed("mount")
+        assert hostname + "/nix on /nix type zfs" in machine.succeed("mount")
+        assert hostname + "/persistent on /persistent type zfs" in machine.succeed("mount")
+        assert hostname + "/log on /var/log type zfs" in machine.succeed("mount")
 
 def encrypted_disk_mounted_verification(hostname):
     with subtest("Check whether drive is mounted correctly"):
