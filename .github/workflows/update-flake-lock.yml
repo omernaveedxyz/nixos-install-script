@@ -16,7 +16,7 @@ jobs:
           token: ${{ secrets.TOKEN }}
 
       - name: "Install Nix Package Manager"
-        uses: cachix/install-nix-action@v26
+        uses: cachix/install-nix-action@V27
         with:
           extra_nix_config: "system-features = nixos-test benchmark big-parallel kvm"
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
