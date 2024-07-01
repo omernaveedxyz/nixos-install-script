@@ -25,7 +25,7 @@ jobs:
         run: echo "DATE=$(date +%F)" >> $GITHUB_ENV
 
       - name: "Update Flake Lock"
-        uses: DeterminateSystems/update-flake-lock@v21
+        uses: DeterminateSystems/update-flake-lock@v23
         with:
           commit-msg: "flake.lock: update"
           pr-title: "Update Flake Lock (${{ env.DATE }})"
